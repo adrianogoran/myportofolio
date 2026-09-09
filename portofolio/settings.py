@@ -90,8 +90,8 @@ if PRODUCTION:
             'HOST': os.getenv('DB_HOST'),
             'PORT': os.getenv('DB_PORT'),
             'OPTIONS': {
-                'options': f"-c search_path={os.getenv('SCHEMA', 'public')}"
-            }
+                'options': f"-c search_path={os.getenv('SCHEMA') or 'public'}"
+                }
         }
     }
 else:
