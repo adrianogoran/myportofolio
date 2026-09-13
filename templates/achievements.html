@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Experience - {{ name }}</title>
+    <title>Achievements - {{ name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -21,31 +21,33 @@
         </div>
     </header>
     <main>
-    <section class="experience-section" id="experience">
+    <section class="experience-section" id="achievements">
         <div class="container">
-            <p class="section-kicker">My journey so far</p>
-            <h1>Experience</h1>
+            <p class="section-kicker">Recognition and milestones</p>
+            <h1>Achievements</h1>
 
             <div class="experience-grid">
-                {% for experience in experience_list %}
+                {% for achievement in achievement_list %}
                     <article class="experience-card">
                         <span class="experience-category">
-                            {{ experience.get_category_display }}
+                            {{ achievement.get_category_display }}
                         </span>
-                        <h2>{{ experience.title }}</h2>
-                        <p class="experience-description">
-                            {{ experience.description }}
+                        <h2>{{ achievement.title }}</h2>
+                        <p class="experience-status">
+                            {{ achievement.date_awarded|date:"M Y" }}
                         </p>
-
-                        {% if experience.is_ongoing %}
-                            <p class="experience-status">Ongoing</p>
-                        {% else %}
-                            <p class="experience-status">Completed</p>
+                        <p class="experience-status">
+                            {{ achievement.issuer }}
+                        </p>
+                        {% if achievement.description %}
+                            <p class="experience-description">
+                                {{ achievement.description }}
+                            </p>
                         {% endif %}
                     </article>
                 {% empty %}
                     <p class="empty-state">
-                        No experience has been added yet.
+                        No achievements have been added yet.
                     </p>
                 {% endfor %}
             </div>
