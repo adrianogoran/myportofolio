@@ -31,3 +31,23 @@ class Experience(models.Model):
     @property
     def is_ongoing(self):
         return self.ended_at is None
+
+
+class Achievement(models.Model):
+    ACHIEVEMENT_CHOICES = [
+    ("competition","Competition"),
+    ("award","Award"),
+    ("certification","Certification"),
+    ("academic", "Academic"),
+]
+
+    id = models.UUIDField(primary_key=True, default = uuid.uuid4, editable = False)
+    title = models.CharField(max_length=255)
+    issuer = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(
+        max_length = 20,
+        choices =ACHIEVEMENT_CHOICES,
+        default="award"
+    )
+    date_awarded = models.DateField()
