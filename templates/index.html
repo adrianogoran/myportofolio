@@ -1,94 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ name }} - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <nav>
-                <a href="{% url 'main:show_main' %}">Profile</a>
-                <a href="{% url 'main:show_experience' %}">Experience</a>
-                <a href="{% url 'main:show_achievements' %}">Achievements</a>
-            </nav>
-        </div>
-    </header>
-    <main>
-        <section class="hero" id="profile">
-            <div class="container hero-grid">
-                <div class="hero-identity">
-                    <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
-                    <h1>{{ name }}</h1>
-                </div>
-                <div class="hero-photo">
-                    <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/goran.jpeg" alt="Photo of {{ name }}">
-                </div>
-                <div class="hero-details">
-                    <p class="bio">{{ bio }}</p>
-                    <dl class="meta-list">
-                        <div class="meta-row">
-                            <dt>NPM</dt>
-                            <dd>{{ npm }}</dd>
-                        </div>
-                        <div class="meta-row">
-                            <dt>Program</dt>
-                            <dd>{{ study_program }}</dd>
-                        </div>
-                    </dl>
-                    <div class="social-links">
-                        <a href="https://github.com/adrianogoran" class="social-link">GitHub</a>
-                        <a href="https://www.linkedin.com/in/goran-adriano-tamrella-334b91272/" class="social-link">LinkedIn</a>
-                        <a href="mailto:goran.adriano@ui.ac.id" class="social-link">Email</a> 
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<main>
+    <section class="hero" id="profile">
+        <div class="container hero-grid">
+            <div class="hero-identity">
+                <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
+                <h1>{{ name }}</h1>
+            </div>
+            <div class="hero-photo">
+                <div class="photo-block"></div>
+                <img class="avatar" src="{% static 'img/goran.jpeg' %}" alt="Photo of {{ name }}">
+            </div>
+            <div class="hero-details">
+                <p class="bio">{{ bio }}</p>
+                <dl class="meta-list">
+                    <div class="meta-row">
+                        <dt>NPM</dt>
+                        <dd>{{ npm }}</dd>
                     </div>
+                    <div class="meta-row">
+                        <dt>Program</dt>
+                        <dd>{{ study_program }}</dd>
+                    </div>
+                </dl>
+                <div class="social-links">
+                    <a href="https://github.com/adrianogoran" class="social-link">GitHub</a>
+                    <a href="https://www.linkedin.com/in/goran-adriano-tamrella-334b91272/" class="social-link">LinkedIn</a>
+                    <a href="mailto:goran.adriano@ui.ac.id" class="social-link">Email</a> 
                 </div>
             </div>
-        </section>
-     <section class="experience" id="experience">
-    <div class="container">
-        <h2>Experience &amp; Achievements</h2>
-
-        <article class="exp-item">
-            <p class="exp-date">August 2026 - December 2026</p>
-            <div class="exp-body">
-                <h3>Teaching Assistant - Foundations Of Programming 1 International Class</h3>
-                <p class="exp-org">Education</p>
-                <p>Helped create, grade labs, while also aiding students in their introduction to programming</p>
-            </div>
-        </article>
-
-        <article class="exp-item">
-            <p class="exp-date">July 2026</p>
-            <div class="exp-body">
-                <h3>Top 100 in Hackathon Digital Cooperatives</h3>
-                <p class="exp-org">Achievement</p>
-                <p>Finished in the TOP 100 out of 300 Participants Nationally</p>
-            </div>
-        </article>
-
-        <article class = "exp-item"> 
-            <p class = "exp-date">July 2024 - July 2025</p>
-            <div class = "exp-body">
-                <h3>Captain, Basketball team</h3>
-                <p class = "exp-org">Sekolah Cita Buana, Jakarta</p>
-                <p>Led the school team through,coordinating training and representing the squad in inter-school competition.</p>
-            </div>
-        </article>
-
-    </div>
-</section>
-    </main>
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
-    </footer>
-</body>
-</html>
+    </section>
+     
+    <section class="experience" id="experience">
+        <div class="container">
+            <h2>Experience &amp; Achievements</h2>
+
+            <article class="exp-item">
+                <p class="exp-date">August 2026 - December 2026</p>
+                <div class="exp-body">
+                    <h3>Teaching Assistant - Foundations Of Programming 1 International Class</h3>
+                    <p class="exp-org">Education</p>
+                    <p>Helped create, grade labs, while also aiding students in their introduction to programming</p>
+                </div>
+            </article>
+
+            <article class="exp-item">
+                <p class="exp-date">July 2026</p>
+                <div class="exp-body">
+                    <h3>Top 100 in Hackathon Digital Cooperatives</h3>
+                    <p class="exp-org">Achievement</p>
+                    <p>Finished in the TOP 100 out of 300 Participants Nationally</p>
+                </div>
+            </article>
+
+            <article class="exp-item"> 
+                <p class="exp-date">July 2024 - July 2025</p>
+                <div class="exp-body">
+                    <h3>Captain, Basketball team</h3>
+                    <p class="exp-org">Sekolah Cita Buana, Jakarta</p>
+                    <p>Led the school team through, coordinating training and representing the squad in inter-school competition.</p>
+                </div>
+            </article>
+
+        </div>
+    </section>
+</main>
+{% endblock content %}
