@@ -455,7 +455,7 @@ h1, h2, h3, .brand {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: #fff;
-    color: var(--ink);
+    color: black !important;
     font: inherit;
 }
 

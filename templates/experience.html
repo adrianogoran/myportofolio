@@ -8,13 +8,13 @@
     <main>
         <section class="experience-section" id="experience">
             <div class="container">
-                <p class="section-kicker">Karya yang saya bangun</p>
+                <p class="section-kicker">My Experience</p>
                 
                 <div class="project-header">
                     <h1>Experience</h1>
                     <a href="{% url 'main:create_experience' %}" class="button project-add-button">
                         <span aria-hidden="true">+</span>
-                        Tambah Pengalaman
+                        Add Experience
                     </a>
                 </div>
 
@@ -23,10 +23,10 @@
                     <input type="search"
                            name="title"
                            value="{{ title_query }}"
-                           placeholder="Cari berdasarkan nama pengalaman"
+                           placeholder="Find an Experience"
                            class="project-search__input"
-                           aria-label="Cari berdasarkan nama pengalaman">
-                    <button type="submit" class="button">Cari</button>
+                           aria-label="Find an Experience">
+                    <button type="submit" class="button">Find</button>
                 </form>
 
                 <div class="experience-grid project-grid">

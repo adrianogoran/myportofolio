@@ -1,0 +1,49 @@
+<p class="experience-status">
+    <button type="button"
+            class="button button-danger"
+            popovertarget="delete-achievement-{{ achievement.pk }}"
+            aria-label="Delete {{ achievement.title }}"
+            title="Delete achievement">
+        Delete Achievement
+    </button>
+</p>
+
+<div id="delete-achievement-{{ achievement.pk }}"
+     class="project-delete-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="delete-achievement-title-{{ achievement.pk }}">
+
+    <button type="button"
+            class="project-delete-modal__backdrop"
+            popovertarget="delete-achievement-{{ achievement.pk }}"
+            popovertargetaction="hide"
+            aria-label="Close confirmation"></button>
+
+    <div class="project-delete-modal__content">
+        <button type="button"
+                class="project-delete-modal__close"
+                popovertarget="delete-achievement-{{ achievement.pk }}"
+                popovertargetaction="hide"
+                aria-label="Close confirmation">&times;</button>
+
+        <h2 id="delete-achievement-title-{{ achievement.pk }}">Delete Achievement?</h2>
+        <p>
+            Are you sure you want to delete
+            <strong>{{ achievement.title }}</strong>?
+        </p>
+
+        <div class="project-delete-modal__actions">
+            <button type="button"
+                    class="button button-secondary"
+                    popovertarget="delete-achievement-{{ achievement.pk }}"
+                    popovertargetaction="hide">Cancel</button>
+
+            <form method="post" action="{% url 'main:delete_achievement' achievement.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="button button-danger">Yes, Delete</button>
+            </form>
+        </div>
+    </div>
+</div>

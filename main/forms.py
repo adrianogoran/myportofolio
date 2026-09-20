@@ -57,7 +57,7 @@ class ExperienceForm(ModelForm):
 class AchievementForm(ModelForm):
     class Meta:
         model = Achievement
-        fields = ["title", "issuer", "description", "category", "date_awarded"]
+        fields = ["title", "issuer", "description", "category", "date_awarded","is_featured"]
         
         labels = {
             "title": "Achievement Title",

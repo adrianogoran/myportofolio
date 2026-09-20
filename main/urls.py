@@ -1,24 +1,49 @@
 from django.urls import path
-
-from main.views import show_main, show_experience, show_achievements, create_experience, create_achievement, show_xml, show_json, show_xml_by_id, show_json_by_id, get_experience_json, delete_experience
-
+from main.views import (
+    show_main,
+    show_experience,
+    create_experience,
+    delete_experience,
+    get_experience_json,
+    show_achievements,
+    create_achievement,
+    delete_achievement,
+    get_achievement_json,
+    show_xml,
+    show_json,
+    show_xml_by_id,
+    show_json_by_id,
+    show_achievement_xml,
+    show_achievement_json,
+    show_achievement_xml_by_id,
+    show_achievement_json_by_id,
+)
 app_name = "main"
 
 urlpatterns = [
     path("", show_main, name="show_main"),
-    path("experience/", show_experience, name="show_experience"),
-    path('achievements/', show_achievements, name='show_achievements'),
-    path('create-experience/', create_experience, name='create_experience'),
-    path('create-achievement/', create_achievement, name='create_achievement'),
 
+    # --- Experience ---
+    path("experience/", show_experience, name="show_experience"),
+    path("create-experience/", create_experience, name="create_experience"),
+    path("delete/<str:id>/", delete_experience, name="delete_experience"),
+
+    # --- Achievement ---
+    path("achievements/", show_achievements, name="show_achievements"),
+    path("create-achievement/", create_achievement, name="create_achievement"),
+    path("delete-achievement/<str:id>/", delete_achievement, name="delete_achievement"),
+
+    # --- Data delivery: Experience ---
     path("xml/", show_xml, name="show_xml"),
-    
-    
-    path("json/", get_experience_json, name="show_json"), 
-    
+    path("json/", show_json, name="show_json"),
     path("xml/<str:id>/", show_xml_by_id, name="show_xml_by_id"),
     path("json/<str:id>/", show_json_by_id, name="show_json_by_id"),
-
     path("api/experience/", get_experience_json, name="get_experience_json"),
-    path('delete/<str:id>/', delete_experience, name='delete_experience'),
+
+    # --- Data delivery: Achievement ---
+    path("xml/achievements/", show_achievement_xml, name="show_achievement_xml"),
+    path("json/achievements/", show_achievement_json, name="show_achievement_json"),
+    path("xml/achievements/<str:id>/", show_achievement_xml_by_id, name="show_achievement_xml_by_id"),
+    path("json/achievements/<str:id>/", show_achievement_json_by_id, name="show_achievement_json_by_id"),
+    path("api/achievements/", get_achievement_json, name="get_achievement_json"),
 ]

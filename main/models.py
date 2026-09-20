@@ -49,3 +49,5 @@ class Achievement(models.Model):
         default="award"
     )
     date_awarded = models.DateField()
+    is_featured = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
