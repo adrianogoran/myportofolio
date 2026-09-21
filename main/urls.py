@@ -17,6 +17,7 @@ from main.views import (
     show_achievement_json,
     show_achievement_xml_by_id,
     show_achievement_json_by_id,
+    edit_achievement,
 )
 app_name = "main"
 
@@ -46,4 +47,5 @@ urlpatterns = [
     path("xml/achievements/<str:id>/", show_achievement_xml_by_id, name="show_achievement_xml_by_id"),
     path("json/achievements/<str:id>/", show_achievement_json_by_id, name="show_achievement_json_by_id"),
     path("api/achievements/", get_achievement_json, name="get_achievement_json"),
+    path("edit-achievement/<str:id>/", edit_achievement, name="edit_achievement"),
 ]

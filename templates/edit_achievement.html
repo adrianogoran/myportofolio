@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block meta %}
+    <title>Edit Achievement - {{name}}</title>
+{% endblock meta %}
+
+{% block content %}
+<section class="experience-section">
+    <div class="container">
+        <p class="section-kicker">Update entry</p>
+        <h1>Edit {{ achievement.title }}</h1>
+
+        <form method="POST" class="project-form">
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="form-error">{{ field.errors|striptags }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="project-actions">
+                <button type="submit" class ="button">Update</button>
+                <a href="{% url 'main:show_achievements' %}" class ="button button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock content %}

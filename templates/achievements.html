@@ -48,6 +48,7 @@
 
                     <div class="project-card-actions">
                         <div class="project-actions">
+                            <a href="{% url 'main:edit_achievement' achievement.pk %}" class="button">Edit</a>
                             {% include 'components/achievement_delete_modal.html' %}
                         </div>
                     </div>

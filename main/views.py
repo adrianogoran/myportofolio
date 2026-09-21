@@ -125,6 +125,23 @@ def create_achievement(request):
     return render(request, "create_achievement.html", context)
 
 
+def edit_achievement(request, id):
+    achievement = get_object_or_404(Achievement, pk=id)
+    form = AchievementForm(request.POST or None, instance=achievement)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Achievement successfully updated!")
+        return redirect("main:show_achievements")
+
+    context = {
+        "name": "Goran",
+        "form": form,
+        "achievement": achievement,
+    }
+    return render(request, "edit_achievement.html", context)
+
+
 def delete_achievement(request, id):
     achievement = get_object_or_404(Achievement, pk=id)
     if request.method == "POST":
@@ -184,18 +201,3 @@ def show_achievement_json_by_id(request, id):
     data = Achievement.objects.filter(pk=id)
     return HttpResponse(serializers.serialize("json", data), content_type="application/json")
 
-def edit_achievement(request, id):
-    achievement = get_object_or_404(Achievement, pk=id)
-    form = AchievementForm(request.POST or None, instance=achievement)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Achievement successfully updated!")
-        return redirect("main:show_achievements")
-
-    context = {
-        "name": "Goran",
-        "form": form,
-        "achievement": achievement,
-    }
-    return render(request, "edit_achievement.html", context)
