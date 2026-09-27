@@ -110,10 +110,7 @@ def show_achievements(request):
     """Mirrors show_experience: fetch JSON, then deserialize before rendering."""
     json_response = get_achievement_json(request)
 
-    achievements = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
+    achievements = serializers.deserialize("json",json_response.content.decode("utf-8"), use_natural_foreign_keys = True)
     achievements = [ach.object for ach in achievements]
     title_query = request.GET.get("title", "").strip()
 
@@ -188,22 +185,22 @@ def get_achievement_json(request):
 
 def show_xml(request):
     data = Experience.objects.all()
-    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+    return HttpResponse(serializers.serialize("xml", data, use_natural_foreign_keys=True), content_type="application/xml")
 
 
 def show_json(request):
     data = Experience.objects.all()
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
 
 
 def show_xml_by_id(request, id):
     data = Experience.objects.filter(pk=id)
-    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+    return HttpResponse(serializers.serialize("xml", data, use_natural_foreign_keys=True), content_type="application/xml")
 
 
 def show_json_by_id(request, id):
     data = Experience.objects.filter(pk=id)
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
 
 
 def show_achievement_xml(request):
