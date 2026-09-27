@@ -58,3 +58,28 @@ I did not use AI for this task, my main references for adding elements and class
 
 ## AI Disclosure
 I did not use AI for this week's task again, i referenced the result from my Tutorial 3, I changed the structure of it to match my original achievements html but this time using the base extension etc.
+
+
+### Assignment 4
+
+This assignment adds authentication, role-based access control, and a star feature to the portfolio.
+
+| Role | Can do |
+|---|---|
+| Visitor (not logged in) | View all pages. Clicking Star redirects to login. |
+| Regular user | Everything above, plus star and unstar experiences. |
+| Editor | Everything above, plus edit experiences and achievements. |
+| Owner (superuser) | Everything above, plus create and delete experiences and achievements. |
+
+- **Authentication:** Register, login, and logout use Django's built-in `User` model with `UserCreationForm` and `AuthenticationForm`. The navbar shows "Hi, username" and a Logout link when logged in, and Login/Register links otherwise.
+- **Editor role:** A Django Group called `Editor` with the `change_experience` and `change_achievement` permissions, assigned to users through the Django admin.
+- **Access control:** Every create, edit, delete, and star view has `@login_required`, so visitors are redirected to `/login/`. Edit views check `request.user.has_perm(...)`, and create and delete views check `is_superuser`, raising `PermissionDenied` (HTTP 403) otherwise. Because superusers hold every permission, one `has_perm` check covers both the editor and the owner.
+- **Hidden controls:** Templates show the Add, Edit, and Delete buttons only to users allowed to use them, via `{% if perms.main.change_... %}` and `{% if user.is_superuser %}`.
+- **Star feature:** `Experience` has a `starred_by` `ManyToManyField` to `User`. The `toggle_star` view is POST-only with `{% csrf_token %}`, and adds or removes the current user. A many-to-many link can only exist once per user and item, so each user can star an item at most once. Each card shows the total count and whether you have starred it (Star / Unstar).
+- **API integrity:** The Experience JSON and XML endpoints serialize with `use_natural_foreign_keys=True`, so `starred_by` lists usernames instead of internal user database ids. I also moved the achievement data routes above `json/<str:id>/` and `xml/<str:id>/` in `main/urls.py`, since the catch-all routes were capturing `/json/achievements/` and crashing it.
+
+## Ai Disclosure:
+I used gemini flash-lite in this assignment. I used it to confirm wether my logic regarding the creation of roles and assigning of roles was correct. Some aspects gemini got wrong were in guiding me on how to add the role itself, it assumed alot about my project without directly confirming the hierarchy or structure of my project. I ended up having to manually find the permission for editor itself.
+ 
+Chat log link: https://share.gemini.google/AFIBXqtiDVwp
+
