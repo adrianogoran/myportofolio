@@ -11,10 +11,12 @@
 
         <div class="project-header">
             <h1>Achievements</h1>
+            {% if user.is_superuser %}
             <a href="{% url 'main:create_achievement' %}" class="button project-add-button">
                 <span aria-hidden="true">+</span>
                 Add Achievement
             </a>
+            {% endif %}
         </div>
 
         <form method="get" action="{% url 'main:show_achievements' %}" class="project-search">
@@ -48,8 +50,12 @@
 
                     <div class="project-card-actions">
                         <div class="project-actions">
+                            {% if perms.main.change_achievement %}
                             <a href="{% url 'main:edit_achievement' achievement.pk %}" class="button">Edit</a>
+                            {% endif %}
+                            {% if user.is_superuser %}
                             {% include 'components/achievement_delete_modal.html' %}
+                            {% endif %}
                         </div>
                     </div>
                 </article>

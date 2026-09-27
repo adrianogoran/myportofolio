@@ -12,10 +12,12 @@
                 
                 <div class="project-header">
                     <h1>Experience</h1>
+                    {% if user.is_superuser %}
                     <a href="{% url 'main:create_experience' %}" class="button project-add-button">
                         <span aria-hidden="true">+</span>
                         Add Experience
                     </a>
+                    {% endif %}
                 </div>
 
                 <!-- Search Form -->
@@ -51,7 +53,13 @@
 
                             <div class="project-card-actions">
                                 <div class="project-actions">
+                                    {% include "components/experience_star.html" %}
+                                    {% if perms.main.change_experience %}
+                                    <a href="{% url 'main:edit_experience' experience.pk %}" class="button">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser %}
                                     {% include 'components/experience_delete_modal.html' %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </article>

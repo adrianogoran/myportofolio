@@ -3,6 +3,7 @@ from main.views import (
     show_main,
     show_experience,
     create_experience,
+    edit_experience,
     delete_experience,
     get_experience_json,
     show_achievements,
@@ -18,6 +19,10 @@ from main.views import (
     show_achievement_xml_by_id,
     show_achievement_json_by_id,
     edit_achievement,
+    register,
+    login_user,
+    logout_user,
+    toggle_star,
 )
 app_name = "main"
 
@@ -27,6 +32,7 @@ urlpatterns = [
     # --- Experience ---
     path("experience/", show_experience, name="show_experience"),
     path("create-experience/", create_experience, name="create_experience"),
+    path("edit-experience/<str:id>/", edit_experience, name="edit_experience"),
     path("delete/<str:id>/", delete_experience, name="delete_experience"),
 
     # --- Achievement ---
@@ -48,4 +54,10 @@ urlpatterns = [
     path("json/achievements/<str:id>/", show_achievement_json_by_id, name="show_achievement_json_by_id"),
     path("api/achievements/", get_achievement_json, name="get_achievement_json"),
     path("edit-achievement/<str:id>/", edit_achievement, name="edit_achievement"),
+
+    # --- Auth ---
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
+    path("experience/<uuid:experience_id>/star/", toggle_star, name="toggle_star"),
 ]

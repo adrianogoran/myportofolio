@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.contrib.auth.models import User
 
 class Experience(models.Model):
     EXPERIENCE_CHOICES = [
@@ -19,6 +20,7 @@ class Experience(models.Model):
         choices=EXPERIENCE_CHOICES,
         default="full-time",
     )
+    starred_by = models.ManyToManyField(User, related_name="starred_projects",blank=True)
     thumbnail = models.URLField(blank=True, null=True)
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(blank=True, null=True)

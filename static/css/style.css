@@ -365,6 +365,27 @@ h1, h2, h3, .brand {
     border-color: var(--accent);
 }
 
+.form-help {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin-top: 0.35rem;
+}
+
+.form-help ul {
+    margin: 0.25rem 0 0;
+    padding-left: 1.2rem;
+}
+
+.form-footer {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-message {
+    color: var(--accent-dark);
+    font-weight: 600;
+}
+
 .form-error {
     color: #b42318;
     font-size: 0.85rem;
@@ -610,4 +631,26 @@ h1, h2, h3, .brand {
         width: 100%;
         text-align: center;
     }
+}
+
+.star-form {
+    display: inline;
+}
+
+.button-star {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--ink);
+}
+
+.button-star.is-starred {
+    background: var(--accent);
+}
+
+.star-count {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    font-size: 0.8rem;
 }
