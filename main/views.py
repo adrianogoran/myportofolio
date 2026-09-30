@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core import serializers
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from main.forms import ExperienceForm, AchievementForm
 from main.models import Achievement, Experience
@@ -10,6 +10,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 import datetime
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST
 
 
 
@@ -31,20 +32,12 @@ def show_main(request):
 # ---------- Experience ----------
 
 def show_experience(request):
-    # Uses the JSON endpoint + deserialization and supports title filtering
-    json_response = get_experience_json(request)
-
-    experiences = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experiences = [exp.object for exp in experiences]
     title_query = request.GET.get("title", "").strip()
 
     context = {
         "name": "Goran",
-        "experience_list": experiences,
         "title_query": title_query,
+        "form" : ExperienceForm(),
     }
     return render(request, "experience.html", context)
 
@@ -64,6 +57,24 @@ def create_experience(request):
         "form": form,
     }
     return render(request, "create_experience.html", context)
+
+@require_POST
+def create_experience_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Only the portfolio owner can add experiences."},
+            status=403,
+        )
+
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse(
+            {"message": "Experience added successfully.", "pk": str(experience.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @login_required(login_url='/login/')
 def edit_experience(request, id):
@@ -96,12 +107,28 @@ def delete_experience(request, id):
 
 def get_experience_json(request):
     title_query = request.GET.get("title", "").strip()
-    experiences = Experience.objects.all()
+    experiences = Experience.objects.prefetch_related("starred_by").all()
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
 
-    experience_json = serializers.serialize("json", experiences, use_natural_foreign_keys = True)
-    return HttpResponse(experience_json, content_type="application/json")
+    data = []
+    for exp in experiences:
+        starred_users = list(exp.starred_by.all())
+        data.append({
+            "pk": str(exp.id),
+            "fields": {
+                "title" : exp.title,
+                "description" : exp.description,
+                "category": exp.category,
+                "thumbnail": exp.thumbnail,
+                "started_at": exp.started_at,
+                "ended_at": exp.ended_at,
+                "star_count": len(starred_users),
+                "is_starred": request.user.is_authenticated and request.user in starred_users,
+                "starred_by_names": ", ".join(u.username for u in starred_users),
+            }
+        })
+    return JsonResponse(data, safe=False)
 
 
 # ---------- Achievement ----------
