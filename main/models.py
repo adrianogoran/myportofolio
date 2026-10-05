@@ -53,3 +53,4 @@ class Achievement(models.Model):
     date_awarded = models.DateField()
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    starred_by = models.ManyToManyField(User,related_name="starred_achievements",blank=True)

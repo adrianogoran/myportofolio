@@ -134,17 +134,11 @@ def get_experience_json(request):
 # ---------- Achievement ----------
 
 def show_achievements(request):
-    """Mirrors show_experience: fetch JSON, then deserialize before rendering."""
-    json_response = get_achievement_json(request)
-
-    achievements = serializers.deserialize("json",json_response.content.decode("utf-8"), use_natural_foreign_keys = True)
-    achievements = [ach.object for ach in achievements]
-    title_query = request.GET.get("title", "").strip()
 
     context = {
         "name": "Goran",
-        "achievement_list": achievements,
-        "title_query": title_query,
+        "title_query": request.GET.get("title","").strip(),
+        "form" : AchievementForm(),
     }
     return render(request, "achievements.html", context)
 
@@ -166,6 +160,23 @@ def create_achievement(request):
     }
     return render(request, "create_achievement.html", context)
 
+@require_POST
+def create_achievement_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Only the portfolio owner can add achievements."},
+            status=403,
+        )
+
+    form = AchievementForm(request.POST)
+    if form.is_valid():
+        achievement = form.save()
+        return JsonResponse(
+            {"message": "Achievement added successfully.", "pk": str(achievement.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @login_required(login_url='/login/')
 def edit_achievement(request, id):
@@ -200,12 +211,30 @@ def delete_achievement(request, id):
 
 def get_achievement_json(request):
     title_query = request.GET.get("title", "").strip()
-    achievements = Achievement.objects.all()
+    achievements = Achievement.objects.prefetch_related("starred_by").all()
     if title_query:
         achievements = achievements.filter(title__icontains=title_query)
 
-    achievement_json = serializers.serialize("json", achievements)
-    return HttpResponse(achievement_json, content_type="application/json")
+    data = []
+    for ach in achievements:
+        starred_users = list(ach.starred_by.all())
+        data.append({
+            "pk": str(ach.id),
+            "fields": {
+                "title" : ach.title,
+                "issuer" : ach.issuer,
+                "category": ach.category,
+                "date_awarded": ach.date_awarded,
+                "is_featured": ach.is_featured,
+                "created_at": ach.created_at,
+                "star_count": len(starred_users),
+                "description": ach.description,
+                "category_label": ach.get_category_display(),
+                "is_starred": request.user.is_authenticated and request.user in starred_users,
+                "starred_by_names": ", ".join(u.username for u in starred_users),
+            }
+        })
+    return JsonResponse(data, safe=False)
 
 
 # ---------- Data delivery ----------
@@ -292,3 +321,14 @@ def toggle_star(request,experience_id):
         else:
             experience.starred_by.add(request.user)
     return redirect("main:show_experience")
+
+@login_required(login_url="/login/")
+def toggle_achievement_star(request, achievement_id):
+    achievement = get_object_or_404(Achievement, pk=achievement_id)
+
+    if request.method == "POST":
+        if request.user in achievement.starred_by.all():
+            achievement.starred_by.remove(request.user)
+        else:
+            achievement.starred_by.add(request.user)
+    return redirect("main:show_achievements")

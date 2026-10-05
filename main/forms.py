@@ -101,14 +101,17 @@ class AchievementForm(ModelForm):
         }
 
     def clean_title(self):
-        title = self.cleaned_data["title"]
-        return strip_tags(title)
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Achievement title can't contain only HTML tags.")
+        return title
 
     def clean_issuer(self):
-        issuer = self.cleaned_data["issuer"]
-        return strip_tags(issuer)
+        issuer = strip_tags(self.cleaned_data["issuer"]).strip()
+        if not issuer:
+            raise ValidationError("Issuer can't contain only HTML tags.")
+        return issuer
 
     def clean_description(self):
-        description = self.cleaned_data["description"]
-        return strip_tags(description)
+        return strip_tags(self.cleaned_data["description"]).strip()
     
