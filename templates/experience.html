@@ -58,7 +58,7 @@
                 <!-- Experience Grid (filled by JavaScript) -->
                 <div id="grid"
                      class="experience-grid project-grid hide"
-                     data-api-url="{% url 'main:get_experience_json' %}"
+                     data-api-url="{% url 'api:experience-list' %}"
                      data-can-edit="{% if perms.main.change_experience %}true{% else %}false{% endif %}"
                      data-can-delete="{% if user.is_superuser %}true{% else %}false{% endif %}"
                      data-is-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"></div>
@@ -74,9 +74,11 @@
         // Configuration
         const gridContainer = document.getElementById('grid');
         const EXPERIENCE_ENDPOINT = gridContainer.dataset.apiUrl;
+        const DETAIL_EXPERIENCE_ENDPOINT = "{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}";
+        const STAR_EXPERIENCE_ENDPOINT = "{% url 'api:experience-star' '00000000-0000-0000-0000-000000000000' %}";
         const CAN_EDIT = gridContainer.dataset.canEdit === 'true';
         const CAN_DELETE = gridContainer.dataset.canDelete === 'true';
-        const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const IS_AUTHENTICATED = gridContainer.dataset.isAuthenticated === 'true';
         const PLACEHOLDER_ID = '00000000-0000-0000-0000-000000000000';
         const CATEGORY_LABELS = {
             'internship': 'Internship',
@@ -116,20 +118,12 @@
         }
 
         // Build an experience card element
-        function buildExperienceCardElement(item) {
-            const experience = item.fields;
-            const experienceId = item.pk;
-            const csrfInput = `<input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">`;
-
+        function buildExperienceCardElement(experience) {
             const articleElement = document.createElement('article');
             articleElement.className = 'experience-card';
 
-            const starUrl = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}"
-                .replace(PLACEHOLDER_ID, experienceId);
             const editUrl = "{% url 'main:edit_experience' '00000000-0000-0000-0000-000000000000' %}"
-                .replace(PLACEHOLDER_ID, experienceId);
-            const deleteUrl = "{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
-                .replace(PLACEHOLDER_ID, experienceId);
+                .replace(PLACEHOLDER_ID, experience.id);
 
             const imageHtml = experience.thumbnail
                 ? `<img src="${escapeHtml(experience.thumbnail)}" alt="Image of ${escapeHtml(experience.title)}" class="project-image">`
@@ -140,10 +134,7 @@
                 : '';
 
             const deleteHtml = CAN_DELETE
-                ? `<form method="post" action="${deleteUrl}" style="display:inline;">
-                    ${csrfInput}
-                    <button type="submit" class="button button-danger" onclick="return confirm('Are you sure you want to delete this experience?');">Delete</button>
-                </form>`
+                ? `<button type="button" class="button button-danger" data-action="delete" data-id="${escapeHtml(experience.id)}">Delete</button>`
                 : '';
 
             const isStarredClass = experience.is_starred ? ' is-starred' : '';
@@ -151,6 +142,21 @@
             const starTitle = experience.star_count > 0
                 ? `Starred by ${experience.starred_by_names}`
                 : 'Be the first to star';
+            const starHtml = IS_AUTHENTICATED
+                ? `<button type="button"
+                            class="button button-star${isStarredClass}"
+                            data-action="star"
+                            data-id="${escapeHtml(experience.id)}"
+                            title="${escapeHtml(starTitle)}">
+                        <span aria-hidden="true">★</span>
+                        ${starText}
+                        <span class="star-count">${escapeHtml(experience.star_count)}</span>
+                    </button>`
+                : `<a href="{% url 'main:login' %}" class="button button-star" title="${escapeHtml(starTitle)}">
+                        <span aria-hidden="true">★</span>
+                        Login to star
+                        <span class="star-count">${escapeHtml(experience.star_count)}</span>
+                    </a>`;
 
             const categoryLabel = CATEGORY_LABELS[experience.category] || experience.category;
             const statusText = experience.ended_at ? 'Completed' : 'Ongoing';
@@ -164,16 +170,7 @@
                 <p class="experience-status">${statusText}</p>
                 <div class="project-card-actions">
                     <div class="project-actions">
-                        <form method="post" action="${starUrl}" class="star-form">
-                            ${csrfInput}
-                            <button type="submit"
-                                    class="button button-star${isStarredClass}"
-                                    title="${escapeHtml(starTitle)}">
-                                <span aria-hidden="true">★</span>
-                                ${starText}
-                                <span class="star-count">${experience.star_count}</span>
-                            </button>
-                        </form>
+                        ${starHtml}
                         ${editHtml}
                         ${deleteHtml}
                     </div>
@@ -207,8 +204,8 @@
                     displayPageSection({ showEmpty: true });
                 } else {
                     gridContainer.innerHTML = '';
-                    experienceData.forEach(item => {
-                        gridContainer.appendChild(buildExperienceCardElement(item));
+                    experienceData.forEach(experience => {
+                        gridContainer.appendChild(buildExperienceCardElement(experience));
                     });
                     displayPageSection({ showGrid: true });
                 }
@@ -242,7 +239,6 @@
             document.getElementById('add-experience-modal').hidePopover();
         }
 
-        const CREATE_EXPERIENCE_ENDPOINT = "{% url 'main:create_experience_ajax' %}";
         const experienceForm = document.getElementById('experience-form');
 
         // Read a cookie value, used to get the CSRF token
@@ -261,6 +257,31 @@
             return cookieValue;
         }
 
+        // Read DRF errors: {"title": ["..."]} or {"detail": "..."}
+        function apiErrorMessage(data, status) {
+            const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+            return messages.join(' ') || `Something went wrong (status ${status}).`;
+        }
+
+        // Send a write request to the API as JSON
+        async function writeExperience(url, method, payload) {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: payload === undefined ? undefined : JSON.stringify(payload),
+            });
+
+            if (response.status === 204) return null;
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+            return data;
+        }
+
         // Send the form data to the server
         async function addExperience(event) {
             event.preventDefault();
@@ -269,27 +290,21 @@
             submitButton.disabled = true;
 
             try {
-                const response = await fetch(CREATE_EXPERIENCE_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                    body: new FormData(experienceForm),
-                });
-                const result = await response.json().catch(() => ({}));
+                const fields = new FormData(experienceForm);
+                const payload = Object.fromEntries(
+                    ['title', 'description', 'category', 'thumbnail'].map(name => [name, fields.get(name)])
+                );
+                // An empty datetime input is "", which DRF rejects, so an ongoing experience sends null
+                payload.ended_at = fields.get('ended_at') || null;
 
-                if (response.ok) {
-                    experienceForm.reset();
-                    closeExperienceModal();
-                    showToast('Success', 'New experience added successfully!', 'success');
-                    fetchExperiences(searchInput.value.trim());
-                } else {
-                    const errorMessages = result.errors
-                        ? Object.values(result.errors).flat().map(error => error.message)
-                        : [result.message || `Something went wrong (status ${response.status}).`];
-                    showToast('Failed to add experience', errorMessages.join(' '), 'error');
-                }
+                await writeExperience(EXPERIENCE_ENDPOINT, 'POST', payload);
+                experienceForm.reset();
+                closeExperienceModal();
+                showToast('Success', 'New experience added successfully!', 'success');
+                await fetchExperiences(searchInput.value.trim());
             } catch (error) {
                 console.error('Error adding experience:', error);
-                showToast('Failed to add experience', 'Could not reach the server. Please try again.', 'error');
+                showToast('Failed to add experience', error.message, 'error');
             } finally {
                 submitButton.disabled = false;
             }
@@ -298,6 +313,32 @@
         if (experienceForm) {
             experienceForm.addEventListener('submit', addExperience);
         }
+
+        // Star and delete buttons, attached to the grid so re-rendered cards keep working
+        gridContainer.addEventListener('click', async function (event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button || button.disabled) return;
+
+            const action = button.dataset.action;
+            if (action === 'delete' && !window.confirm('Are you sure you want to delete this experience?')) return;
+
+            button.disabled = true;
+
+            try {
+                const pattern = action === 'star' ? STAR_EXPERIENCE_ENDPOINT : DETAIL_EXPERIENCE_ENDPOINT;
+                await writeExperience(
+                    pattern.replace(PLACEHOLDER_ID, button.dataset.id),
+                    action === 'star' ? 'POST' : 'DELETE',
+                );
+                showToast('Success', action === 'star' ? 'Star updated.' : 'Experience deleted.', 'success');
+                await fetchExperiences(searchInput.value.trim());
+            } catch (error) {
+                console.error('Error updating experience:', error);
+                showToast('Request failed', error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
 
         // Start the application
         fetchExperiences(searchInput.value.trim());

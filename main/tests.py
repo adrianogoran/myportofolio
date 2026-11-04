@@ -38,26 +38,30 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Ongoing")
+        self.assertContains(response, f'data-api-url="{reverse("api:experience-list")}"')
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
+
+        # Cards are built by JavaScript, so the data is checked on the API.
+        data = self.client.get(reverse("api:experience-list")).json()
+        self.assertEqual(data[0]["title"], self.experience.title)
+        self.assertEqual(data[0]["description"], self.experience.description)
+        self.assertEqual(data[0]["category"], "part-time")
+        self.assertIsNone(data[0]["ended_at"])
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
 
-        self.assertContains(response, "No experience has been added yet.")
+        self.assertContains(response, "No experience has been added or found yet.")
+        self.assertEqual(self.client.get(reverse("api:experience-list")).json(), [])
 
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
-        response = self.client.get(reverse("main:show_experience"))
+        data = self.client.get(reverse("api:experience-list")).json()
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Completed")
-        self.assertNotContains(response, "Ongoing")
+        self.assertIsNotNone(data[0]["ended_at"])
 
 
 class AchievementTest(TestCase):
@@ -82,16 +86,19 @@ class AchievementTest(TestCase):
         self.assertEqual(self.achievement.date_awarded, date(2026, 7, 1))
 
     def test_achievements_page_shows_data(self):
-        response = self.client.get(reverse("main:show_achievements"))
+        # Cards are built by JavaScript, so the data is checked on the JSON endpoint.
+        data = self.client.get(reverse("main:get_achievement_json")).json()
+        fields = data[0]["fields"]
 
-        self.assertContains(response, self.achievement.title)
-        self.assertContains(response, self.achievement.issuer)
-        self.assertContains(response, self.achievement.description)
-        self.assertContains(response, "Competition")
-        self.assertContains(response, "Jul 2026")
+        self.assertEqual(fields["title"], self.achievement.title)
+        self.assertEqual(fields["issuer"], self.achievement.issuer)
+        self.assertEqual(fields["description"], self.achievement.description)
+        self.assertEqual(fields["category_label"], "Competition")
+        self.assertEqual(fields["date_awarded"], "2026-07-01")
 
     def test_empty_achievements_page(self):
         Achievement.objects.all().delete()
         response = self.client.get(reverse("main:show_achievements"))
 
-        self.assertContains(response, "No achievements have been added yet.")
+        self.assertContains(response, "No achievement has been added or found yet.")
+        self.assertEqual(self.client.get(reverse("main:get_achievement_json")).json(), [])

@@ -93,3 +93,6 @@ Chat log link: https://share.gemini.google/AFIBXqtiDVwp
 
 ## AI Disclosure:
 I did nto use AI for this task, i referenced Tutorial 5 and the experience part of my code while changing the variables to match the achievements.
+
+
+### Assignment 7 
