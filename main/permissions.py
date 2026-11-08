@@ -14,6 +14,8 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
 class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
     """For the Achievement API: Editors may update, only the owner creates and deletes."""
 
+    message = "Only Editors can update achievements, and only the portfolio owner can add or delete them."
+
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
