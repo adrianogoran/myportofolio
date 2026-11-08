@@ -9,9 +9,7 @@ from main.views import (
     get_experience_json,
     show_achievements,
     create_achievement,
-    create_achievement_ajax,
     delete_achievement,
-    get_achievement_json,
     show_xml,
     show_json,
     show_xml_by_id,
@@ -25,7 +23,6 @@ from main.views import (
     login_user,
     logout_user,
     toggle_star,
-    toggle_achievement_star,
 )
 app_name = "main"
 
@@ -42,8 +39,6 @@ urlpatterns = [
     # --- Achievement ---
     path("achievements/", show_achievements, name="show_achievements"),
     path("create-achievement/", create_achievement, name="create_achievement"),
-    path("achievements/add-ajax/", create_achievement_ajax, name="create_achievement_ajax"),
-    path("achievements/<uuid:achievement_id>/star/", toggle_achievement_star, name="toggle_achievement_star"),
     path("delete-achievement/<str:id>/", delete_achievement, name="delete_achievement"),
 
         # --- Data delivery: Achievement ---
@@ -51,7 +46,6 @@ urlpatterns = [
     path("json/achievements/", show_achievement_json, name="show_achievement_json"),
     path("xml/achievements/<str:id>/", show_achievement_xml_by_id, name="show_achievement_xml_by_id"),
     path("json/achievements/<str:id>/", show_achievement_json_by_id, name="show_achievement_json_by_id"),
-    path("api/achievements/", get_achievement_json, name="get_achievement_json"),
     path("edit-achievement/<str:id>/", edit_achievement, name="edit_achievement"),
 
     # --- Data delivery: Experience ---
