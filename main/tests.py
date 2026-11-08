@@ -86,9 +86,8 @@ class AchievementTest(TestCase):
         self.assertEqual(self.achievement.date_awarded, date(2026, 7, 1))
 
     def test_achievements_page_shows_data(self):
-        # Cards are built by JavaScript, so the data is checked on the JSON endpoint.
-        data = self.client.get(reverse("main:get_achievement_json")).json()
-        fields = data[0]["fields"]
+        # Cards are built by JavaScript, so the data is checked on the API endpoint.
+        fields = self.client.get(reverse("api:achievement-list")).json()[0]
 
         self.assertEqual(fields["title"], self.achievement.title)
         self.assertEqual(fields["issuer"], self.achievement.issuer)
@@ -101,4 +100,4 @@ class AchievementTest(TestCase):
         response = self.client.get(reverse("main:show_achievements"))
 
         self.assertContains(response, "No achievement has been added or found yet.")
-        self.assertEqual(self.client.get(reverse("main:get_achievement_json")).json(), [])
+        self.assertEqual(self.client.get(reverse("api:achievement-list")).json(), [])
