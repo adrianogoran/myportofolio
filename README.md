@@ -95,4 +95,30 @@ Chat log link: https://share.gemini.google/AFIBXqtiDVwp
 I did nto use AI for this task, i referenced Tutorial 5 and the experience part of my code while changing the variables to match the achievements.
 
 
-### Assignment 7 
+### Assignment 7
+
+This assignment moves the Achievements section onto a Django REST Framework API, following the pattern from Tutorial 7 (which did the same for Experience).
+
+| Endpoint | Methods | Who can use it |
+|---|---|---|
+| `/api/v1/achievements/` | `GET` (with `?title=` search), `POST` | Everyone reads, only the owner creates |
+| `/api/v1/achievements/<uuid>/` | `GET`, `PUT`, `PATCH`, `DELETE` | Everyone reads, Editor and owner update, only the owner deletes |
+| `/api/v1/achievements/<uuid>/star/` | `POST` | Any logged-in user (toggles their own star) |
+
+- **Serializer:** `AchievementSerializer` in `main/serializers.py` has an explicit `fields` list. `star_count`, `is_starred`, `starred_by_names` and `category_label` are read-only computed fields, and no email or password data is exposed. `validate_title`, `validate_issuer` and `validate_description` run `strip_tags`, like the `clean_<field>` methods in `AchievementForm`.
+- **Permission:** `IsPortfolioOwnerOrEditorOrReadOnly` allows safe methods for everyone, everything for the superuser, and only `PUT`/`PATCH` for users with the `change_achievement` permission (the Editor group from Assignment 4). The star endpoint uses `IsAuthenticated` and always stars as `request.user`.
+- **API views:** `achievement_list`, `achievement_detail` and `achievement_star` in `main/api_views.py` use `@api_view` and `SessionAuthentication`, and return 201 / 400 / 403 / 404 / 204 where appropriate.
+- **Page:** `achievements.html` now loads, searches, adds, stars, edits (new edit modal using `PATCH`) and deletes (confirm modal) through `fetch()` to `/api/v1/`, without reloading. Every write sends `X-CSRFToken`, API errors (400 and 403) are shown in a toast, and all text still goes through `escapeHtml`.
+- **Cleanup:** The old `create_achievement_ajax`, `get_achievement_json` and `toggle_achievement_star` views were removed, since the API replaces them.
+- **Tests:** `AchievementAPITest` in `main/tests_api.py` covers every role (with database checks on rejected requests), validation, stars, and CSRF with `APIClient(enforce_csrf_checks=True)` and `.login()`. Run them with `python manage.py test main`.
+
+1. REST (Representational State Transfer) is a style for designing APIs around resources. Each resource has its own URL (`/api/v1/achievements/<id>/`), and the HTTP method says what to do with it: `GET` reads, `POST` creates, `PUT`/`PATCH` update and `DELETE` removes. The server is stateless between requests and answers with meaningful status codes such as 201, 400, 403, 404 and 204. Returning JSON alone isn't enough. My old `get_achievement_json` endpoint returned JSON, but it only supported one URL with `GET`, creating went through a separate `add-ajax` URL, starring through another form URL, and errors didn't follow consistent status codes. It was JSON over ad-hoc RPC-style endpoints, not a resource-based API. `PUT` replaces the whole resource, so every required field must be sent, and missing fields fail validation (a `PUT` with only `title` returns 400). `PATCH` only changes the fields that are sent. For example, `PUT` fits an edit form that submits the full achievement, and `PATCH` fits a small change like toggling `is_featured` or fixing a typo in the title.
+
+2. A serializer converts between model instances and data formats like JSON. In one direction it turns an `Achievement` into a dictionary for the response. In the other it takes incoming data, validates it (field types, choices, dates, plus my `validate_<field>` methods) and saves it to the model. Compared to building a dictionary by hand with `JsonResponse` as in Tutorial 5, the fields are declared once and reused for both reading and writing, validation and error messages come for free in a consistent `{"field": ["error"]}` format, read-only fields can't be overwritten by the client, and computed fields like `star_count` sit in one place instead of being repeated in every view.
+
+3. Authentication answers "who are you?" and authorization answers "what are you allowed to do?". In DRF, `SessionAuthentication` reads the Django session cookie and sets `request.user`. The permission class (`IsPortfolioOwnerOrEditorOrReadOnly`) then decides whether that user may perform the request's method. Hiding a button in the template only changes what the page shows. Anyone can still send a `DELETE` request with `fetch()`, curl or the Browsable API without ever seeing the button. The server is the only place the client can't change, so access rules have to be enforced there, and the hidden buttons are just a nicer UI on top.
+
+4. With `SessionAuthentication`, the browser sends the session cookie automatically with every request to the site, including requests triggered by a malicious page on another site. Without a CSRF token, that page could make a logged-in user's browser send `DELETE /api/v1/achievements/<id>/` and the server would accept it. DRF's `SessionAuthentication` therefore enforces Django's CSRF check for unsafe methods, and my page sends the token in the `X-CSRFToken` header, which another site can't read. `force_authenticate` skips the whole authentication step, including the CSRF check, and attaches the user directly. A test using it would pass even if CSRF protection were broken. That's why the CSRF test uses `APIClient(enforce_csrf_checks=True)` with `.login()`, which goes through the real session login and shows that a write without the token is rejected with 403.
+
+## AI Disclosure:
+I did not use AI for this assignment, i followed the tutorial's guide and just altered the achievement parts accordingly
