@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from main.models import Achievement, Experience
+from main.models import Achievement, Experience, Project
 
 
 class ExperienceAPITest(APITestCase):
@@ -45,19 +45,22 @@ class ExperienceAPITest(APITestCase):
         self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
 
     def test_guest_and_visitor_cannot_write(self):
-        for user in (None, self.visitor):
+        for user, expected in (
+            (None, status.HTTP_401_UNAUTHORIZED),
+            (self.visitor, status.HTTP_403_FORBIDDEN),
+        ):
             self.client.force_authenticate(user=user)
             self.assertEqual(
                 self.client.post(self.list_url, self.payload, format="json").status_code,
-                status.HTTP_403_FORBIDDEN,
+                expected,
             )
             self.assertEqual(
                 self.client.patch(self.detail_url, {"title": "Changed"}, format="json").status_code,
-                status.HTTP_403_FORBIDDEN,
+                expected,
             )
             self.assertEqual(
                 self.client.delete(self.detail_url).status_code,
-                status.HTTP_403_FORBIDDEN,
+                expected,
             )
         self.assertEqual(Experience.objects.count(), 1)
         self.experience.refresh_from_db()
@@ -106,7 +109,7 @@ class ExperienceAPITest(APITestCase):
         self.assertFalse(Experience.objects.filter(pk=self.experience.id).exists())
 
     def test_star_requires_login_and_toggles(self):
-        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.force_authenticate(user=self.visitor)
         response = self.client.post(self.star_url)
         self.assertTrue(response.data["is_starred"])
@@ -229,7 +232,10 @@ class AchievementAPITest(APITestCase):
     # ---------- Roles ----------
 
     def test_visitor_and_regular_user_cannot_write(self):
-        for user in (None, self.user):
+        for user, expected in (
+            (None, status.HTTP_401_UNAUTHORIZED),
+            (self.user, status.HTTP_403_FORBIDDEN),
+        ):
             self.client.force_authenticate(user=user)
             for method, url, data in [
                 ("post", self.list_url, self.payload),
@@ -238,7 +244,7 @@ class AchievementAPITest(APITestCase):
                 ("delete", self.detail_url, None),
             ]:
                 response = getattr(self.client, method)(url, data, format="json")
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN, (user, method))
+                self.assertEqual(response.status_code, expected, (user, method))
             self.assertAchievementUnchanged()
 
     def test_editor_can_patch_and_put(self):
@@ -337,7 +343,7 @@ class AchievementAPITest(APITestCase):
 
     def test_star_rejects_visitor(self):
         response = self.client.post(self.star_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(self.achievement.starred_by.count(), 0)
 
     def test_star_toggles_for_request_user(self):
@@ -392,3 +398,66 @@ class AchievementAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.achievement.refresh_from_db()
         self.assertEqual(self.achievement.title, "Via session")
+
+
+class ProjectTokenAPITest(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_superuser(
+            username="owner", password="test-password", email="owner@example.com",
+        )
+        self.visitor = User.objects.create_user(username="visitor", password="test-password")
+        self.list_url = reverse("api:project-list")
+        self.payload = {
+            "title": "MyPortfolio", "description": "Portfolio app", "tech_stack": "Flutter, Django",
+            "project_url": "https://example.com", "project_image_url": "",
+        }
+
+    def login(self, username):
+        self.client.credentials()
+        response = self.client.post(
+            reverse("api:api_token_auth"),
+            {"username": username, "password": "test-password"}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {response.data['token']}")
+
+    def create(self, **changes):
+        return self.client.post(self.list_url, {**self.payload, **changes}, format="json")
+
+    def test_public_list_and_detail(self):
+        project = Project.objects.create(**self.payload)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.data, [{"id": str(project.id), **self.payload}])
+        response = self.client.get(reverse("api:project-detail", args=[project.id]))
+        self.assertEqual(response.data["title"], "MyPortfolio")
+
+    def test_write_permissions(self):
+        self.assertEqual(self.create().status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.credentials(HTTP_AUTHORIZATION="Token invalid")
+        self.assertEqual(self.create().status_code, status.HTTP_401_UNAUTHORIZED)
+        self.login("visitor")
+        self.assertEqual(self.create().status_code, status.HTTP_403_FORBIDDEN)
+        self.login("owner")
+        self.assertEqual(self.create().status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Project.objects.count(), 1)
+
+    def test_validation(self):
+        self.login("owner")
+        for field, value in [("title", "<b></b>"), ("tech_stack", " "), ("project_url", "nope")]:
+            response = self.create(**{field: value})
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(field, response.data)
+
+    def test_logout_revokes_token(self):
+        url = reverse("api:api_logout")
+        self.assertEqual(self.client.post(url).status_code, status.HTTP_401_UNAUTHORIZED)
+        self.login("owner")
+        self.assertEqual(self.client.post(url).status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.client.post(url).status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_wrong_password(self):
+        response = self.client.post(
+            reverse("api:api_token_auth"),
+            {"username": "owner", "password": "wrong"}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

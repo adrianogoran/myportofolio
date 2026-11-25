@@ -1,19 +1,18 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.decorators import (
-    api_view, authentication_classes, permission_classes,
-)
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from main.models import Achievement, Experience
-from main.permissions import IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly
-from main.serializers import AchievementSerializer, ExperienceSerializer
+from main.models import Achievement, Experience, Project
+from main.permissions import (
+    IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly,
+    IsProjectOwnerOrReadOnly,
+)
+from main.serializers import AchievementSerializer, ExperienceSerializer, ProjectSerializer
 
 
 @api_view(["GET", "HEAD", "POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 def experience_list(request):
     if request.method in ("GET", "HEAD"):
@@ -33,7 +32,6 @@ def experience_list(request):
 
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 def experience_detail(request, experience_id):
     experience = get_object_or_404(
@@ -57,7 +55,6 @@ def experience_detail(request, experience_id):
 
 
 @api_view(["POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def experience_star(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
@@ -72,7 +69,6 @@ def experience_star(request, experience_id):
 # ---------- Achievement ----------
 
 @api_view(["GET", "HEAD", "POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def achievement_list(request):
     """List achievements (optionally filtered with ?title=) or create one (owner only)."""
@@ -93,7 +89,6 @@ def achievement_list(request):
 
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def achievement_detail(request, achievement_id):
     """Read, update (Editor or owner) or delete (owner only) a single achievement."""
@@ -118,7 +113,6 @@ def achievement_detail(request, achievement_id):
 
 
 @api_view(["POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def achievement_star(request, achievement_id):
     """Toggle the logged-in user's star; the account always comes from request.user."""
@@ -129,3 +123,36 @@ def achievement_star(request, achievement_id):
         achievement.starred_by.add(request.user)
     serializer = AchievementSerializer(achievement, context={"request": request})
     return Response(serializer.data)
+
+
+# ---------- Project ----------
+
+@api_view(["GET", "HEAD", "POST"])
+@permission_classes([IsProjectOwnerOrReadOnly])
+def project_list(request):
+    """List projects or create one (owner only)."""
+    if request.method in ("GET", "HEAD"):
+        projects = Project.objects.order_by("-created_at")
+        return Response(ProjectSerializer(projects, many=True).data)
+
+    serializer = ProjectSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "HEAD"])
+def project_detail(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    return Response(ProjectSerializer(project).data)
+
+
+# ---------- Authentication ----------
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    """Revoke the token used for this request (None for session logins)."""
+    if request.auth is not None:
+        request.auth.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

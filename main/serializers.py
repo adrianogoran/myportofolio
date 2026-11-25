@@ -1,7 +1,7 @@
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
-from main.models import Achievement, Experience
+from main.models import Achievement, Experience, Project
 
 
 class ExperienceSerializer(serializers.ModelSerializer):
@@ -83,3 +83,28 @@ class AchievementSerializer(serializers.ModelSerializer):
 
     def get_starred_by_names(self, obj):
         return ", ".join(user.username for user in obj.starred_by.all())
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            "id", "title", "description", "tech_stack",
+            "project_url", "project_image_url",
+        ]
+        read_only_fields = ["id"]
+
+    def _strip_required(self, value, label):
+        value = strip_tags(value).strip()
+        if not value:
+            raise serializers.ValidationError(f"{label} can't contain only HTML tags.")
+        return value
+
+    def validate_title(self, value):
+        return self._strip_required(value, "Project title")
+
+    def validate_description(self, value):
+        return self._strip_required(value, "Description")
+
+    def validate_tech_stack(self, value):
+        return self._strip_required(value, "Tech stack")
